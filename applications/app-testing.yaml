@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-cluster-app
+  labels:
+    env: testing
+spec:
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: '{{name}}-app'
+    spec:
+      project: sync-config
+      source:
+        repoURL: 'git@github.com:quyetmv/k8s-config.git'
+        targetRevision: HEAD
+        path: 'applications'
+      destination:
+        server: '{{server}}'
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
