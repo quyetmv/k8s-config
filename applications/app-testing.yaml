@@ -11,9 +11,9 @@ spec:
     metadata:
       name: '{{name}}-app'
     spec:
-      project: sync-config
+      project: default
       source:
-        repoURL: 'git@github.com:quyetmv/k8s-config.git'
+        repoURL: 'https://github.com/quyetmv/k8s-config'
         targetRevision: HEAD
         path: 'applications'
       destination:
