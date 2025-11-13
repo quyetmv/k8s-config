@@ -15,7 +15,7 @@ spec:
       source:
         repoURL: 'https://github.com/quyetmv/k8s-config'
         targetRevision: HEAD
-        path: 'applications'
+        path: 'k8s-config'
       destination:
         server: '{{server}}'
         namespace: argocd
