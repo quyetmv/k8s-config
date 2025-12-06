@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: testing-helm-apps
+  namespace: argocd
+spec:
+  generators:
+  - matrix:
+      generators:
+      - clusters: {}
+      - list:
+          elements:
+          - appName: ingress-internal
+            namespace: argocd
+            chart: nginx-ingress
+            targetRevision: 1.1.0
+            helmValuesPath: k8s-config/manifests/testing/ingress/values-internal.yaml
+
+          - appName: ingress-external
+            namespace: argocd
+            chart: nginx-ingress
+            targetRevision: 1.1.0
+            helmValuesPath: k8s-config/manifests/testing/ingress/values-external.yaml
+
+          - appName: external-secrets
+            namespace: argocd
+            chart: external-secrets
+            targetRevision: 0.10.4
+            helmValuesPath: k8s-config/manifests/testing/externalsecret/values.yaml
+
+          - appName: prometheus
+            namespace: argocd
+            chart: kube-prometheus-stack
+            targetRevision: 65.5.0
+            helmValuesPath: k8s-config/manifests/testing/prometheus/values.yaml
+
+  template:
+    metadata:
+      name: '{{metadata.labels.gitops-cluster-name}}-{{appName}}'
+      labels:
+        env: testing
+    spec:
+      project: default
+      destination:
+        server: '{{server}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=false
+
+      sources:                     # ← ĐỔI TỪ source → sources (dạng plural)
+      - repoURL: https://charts.external-secrets.io        # hoặc repo tương ứng với từng chart
+        chart: '{{chart}}'
+        targetRevision: '{{targetRevision}}'
+        helm:
+          releaseName: '{{appName}}'
+          # các value mặc định của chart nếu cần
+
+      - repoURL: https://github.com/quyetmv/k8s-config           # ← repo chứa values.yaml của bạn
+        targetRevision: main
+        path: .                                            # root repo
+        helm:
+          valueFiles:
+          - '{{helmValuesPath}}'                           # ← giờ thì đúng đường dẫn rồi!

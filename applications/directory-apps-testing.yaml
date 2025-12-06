@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: testing-directory-apps
+  labels:
+    env: testing
+spec:
+  generators:
+  - matrix:
+      generators:
+      - clusters: {}
+      - list:
+          elements:
+          - appName: internal-app-rbac
+            namespace: argocd
+            manifestPath: manifests/testing/internal-app-rbac.yaml      # ← SỬA
+          - appName: fluentbit
+            namespace: argocd
+            manifestPath: manifests/testing/logging/fluentbit            # ← SỬA
+  template:
+    metadata:
+      name: '{{name}}-{{appName}}'
+    spec:
+      project: default
+      destination:
+        server: '{{server}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=false
+      source:
+        repoURL: https://github.com/quyetmv/k8s-config
+        targetRevision: HEAD
+        path: '{{manifestPath}}'
