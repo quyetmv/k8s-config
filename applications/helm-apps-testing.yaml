@@ -4,64 +4,93 @@ metadata:
   name: testing-helm-apps
   namespace: argocd
 spec:
+  goTemplate: true                                 # bật Go template (cần ArgoCD ≥ v2.8)
   generators:
   - matrix:
       generators:
-      - clusters: {}
+      # Generator 1: lấy tất cả cluster có label env=testing (hoặc bất kỳ label nào bạn muốn)
+      - clusters:
+          selector:
+            matchLabels:
+              env: testing                       # bắt buộc mỗi cluster phải có label này và giá trị khác nhau hoặc giống nhau đều được
+
+      # Generator 2: danh sách các Helm app
       - list:
           elements:
           - appName: ingress-internal
-            namespace: argocd
             chart: nginx-ingress
-            targetRevision: 1.1.0
-            helmValuesPath: k8s-config/manifests/testing/ingress/values-internal.yaml
+            repoURL: https://github.com/nginxinc/helm-charts
+            version: 1.1.0
+            valuesFile: k8s-config/manifests/testing/ingress/values-internal.yaml
+            destNamespace: argocd
 
           - appName: ingress-external
-            namespace: argocd
             chart: nginx-ingress
-            targetRevision: 1.1.0
-            helmValuesPath: k8s-config/manifests/testing/ingress/values-external.yaml
+            repoURL: https://github.com/nginx/ingress-nginx
+            version: 4.11.2
+            valuesFile: k8s-config/manifests/testing/ingress/values-external.yaml
+            destNamespace: argocd
 
           - appName: external-secrets
-            namespace: argocd
             chart: external-secrets
-            targetRevision: 0.10.4
-            helmValuesPath: k8s-config/manifests/testing/externalsecret/values.yaml
+            repoURL: https://charts.external-secrets.io
+            version: 0.10.4
+            valuesFile: k8s-config/manifests/testing/externalsecret/values.yaml
+            destNamespace: external-secrets
 
           - appName: prometheus
-            namespace: argocd
             chart: kube-prometheus-stack
-            targetRevision: 65.5.0
-            helmValuesPath: k8s-config/manifests/testing/prometheus/values.yaml
+            repoURL: https://prometheus-community.github.io/helm-charts
+            version: 65.5.0
+            valuesFile: k8s-config/manifests/testing/prometheus/values.yaml
+            destNamespace: monitoring
 
   template:
     metadata:
-      name: '{{metadata.labels.gitops-cluster-name}}-{{appName}}'
+      name: '{{cluster}}-{{appName}}'                 # tên duy nhất trên toàn bộ ArgoCD
       labels:
         env: testing
+        cluster: '{{cluster}}'
+        app: '{{appName}}'
+
     spec:
       project: default
       destination:
         server: '{{server}}'
-        namespace: '{{namespace}}'
+        namespace: '{{destNamespace}}'
+
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
-        - CreateNamespace=false
+        - CreateNamespace=true
+        - Replace=true
 
-      sources:                     # ← ĐỔI TỪ source → sources (dạng plural)
-      - repoURL: https://charts.external-secrets.io        # hoặc repo tương ứng với từng chart
+      # Bỏ qua hoàn toàn lỗi Fluent Bit / Fluentd inject sidecar
+      ignoreDifferences:
+      - group: apps
+        kind: DaemonSet
+        name: fluent-bit-*
+      - group: apps
+        kind: Deployment
+        name: fluent-bit-*
+
+      sources:
+      # Source 1: Helm chart từ registry
+      - repoURL: '{{repoURL}}'
         chart: '{{chart}}'
-        targetRevision: '{{targetRevision}}'
+        targetRevision: '{{version}}'
         helm:
           releaseName: '{{appName}}'
-          # các value mặc định của chart nếu cần
 
-      - repoURL: https://github.com/quyetmv/k8s-config           # ← repo chứa values.yaml của bạn
+      # Source 2: Chỉ lấy values.yaml từ repo config (không render YAML khác)
+      - repoURL: https://github.com/quyetmv/k8s-config.git
         targetRevision: main
-        path: .                                            # root repo
+        path: .
+        directory:
+          recurse: false
+          exclude: '{*.yaml,*.yml,*.json}'          # cực kỳ quan trọng
         helm:
           valueFiles:
-          - '{{helmValuesPath}}'                           # ← giờ thì đúng đường dẫn rồi!
+          - '{{valuesFile}}'

@@ -13,7 +13,7 @@ spec:
           elements:
           - appName: internal-app-rbac
             namespace: argocd
-            manifestPath: manifests/testing/internal-app-rbac.yaml      # ← SỬA
+            manifestPath: manifests/testing
           - appName: fluentbit
             namespace: argocd
             manifestPath: manifests/testing/logging/fluentbit            # ← SỬA
