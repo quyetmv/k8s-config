@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    k8s-app: fluent-bit-nginx-ingress-internal
+    kubernetes.io/cluster-service: "true"
+    team: infra
+    department: infra
+    version: v1
+  name: fluent-bit-nginx-ingress-internal
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluent-bit-nginx-ingress-internal
+  template:
+    metadata:
+      labels:
+        k8s-app: fluent-bit-nginx-ingress-internal
+        kubernetes.io/cluster-service: "true"
+    spec:
+      containers:
+      - name: fluent-bit-nginx-ingress-internal
+        image: registry.giaohangtietkiem.vn/devops/fluent-bit:1.8.7
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: 128m
+            memory: 512Mi
+        volumeMounts:
+        - mountPath: /var/log
+          name: varlog
+        - mountPath: /var/lib/docker/containers
+          name: varlibdockercontainers
+          readOnly: true
+        - mountPath: /fluent-bit/etc/
+          name: fluent-bit-nginx-ingress-internal
+      imagePullSecrets:
+      - name: dockerhub-private
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: fluent-bit
+      serviceAccountName: fluent-bit
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - hostPath:
+          path: /var/log
+          type: ""
+        name: varlog
+      - hostPath:
+          path: /var/lib/docker/containers
+          type: ""
+        name: varlibdockercontainers
+      - name: fluent-bit-nginx-ingress-internal
+        configMap:
+          name: fluent-bit-nginx-ingress-internal
