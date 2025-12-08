@@ -1,22 +1,29 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: testing-helm-apps
+  name: testing-all-apps
   namespace: argocd
+  labels:
+    env: testing
 spec:
   goTemplate: true
   generators:
   - matrix:
       generators:
-      - clusters: {}
+      - clusters:
+          selector:
+            matchLabels:
+              env: testing
       - list:
           elements:
+          # HELM APPS
           - appName: ingress-internal
             chart: nginx-ingress
             repoURL: https://github.com/nginxinc/helm-charts
             targetRevision: 1.1.0
             valuesFile: manifests/testing/ingress/values-internal.yaml
             destNamespace: argocd
+            type: helm  # ← Marker
 
           - appName: ingress-external
             chart: nginx-ingress
@@ -24,34 +31,49 @@ spec:
             targetRevision: 4.11.2
             valuesFile: manifests/testing/ingress/values-external.yaml
             destNamespace: argocd
+            type: helm
 
           - appName: external-secrets
             chart: external-secrets
             repoURL: https://charts.external-secrets.io
             targetRevision: 0.10.4
             valuesFile: manifests/testing/externalsecret/values.yaml
-            destNamespace: argocd
+            destNamespace: external-secrets
+            type: helm
 
           - appName: prometheus
             chart: kube-prometheus-stack
             repoURL: https://prometheus-community.github.io/helm-charts
             targetRevision: 65.5.0
             valuesFile: manifests/testing/prometheus/values.yaml
-            destNamespace: argocd
+            destNamespace: monitoring
+            type: helm
+
+          # DIRECTORY APPS
+          - appName: internal-app-rbac
+            namespace: argocd
+            manifestPath: manifests/testing
+            type: directory  # ← Marker
+
+          - appName: fluentbit
+            namespace: argocd
+            manifestPath: manifests/testing/logging/fluentbit
+            type: directory
 
   template:
     metadata:
-      name: '{{.name}}-{{.appName}}'          
+      name: '{{name}}-{{appName}}'
       labels:
         env: testing
-        cluster: '{{.name}}'                  
-        app: '{{.appName}}'                  
+        cluster: '{{name}}'
+        app: '{{appName}}'
+        type: '{{type}}'
 
     spec:
       project: default
       destination:
-        server: '{{.server}}'                
-        namespace: '{{.destNamespace}}'      
+        server: '{{server}}'
+        namespace: '{{if .namespace}}{{.namespace}}{{else}}{{.destNamespace}}{{end}}'  # Priority: namespace > destNamespace
 
       syncPolicy:
         automated:
@@ -59,8 +81,31 @@ spec:
           selfHeal: true
         syncOptions:
         - CreateNamespace=true
-        - Replace=true
 
+      # Conditional sources dựa trên type
+      {{- if eq .type "helm" }}
+      sources:
+      # Values repo
+      - repoURL: https://github.com/quyetmv/k8s-config.git
+        targetRevision: main
+        ref: values
+      # Helm chart
+      - repoURL: '{{.repoURL}}'
+        chart: '{{.chart}}'
+        targetRevision: '{{.targetRevision}}'
+        helm:
+          releaseName: '{{appName}}'
+          valueFiles:
+          - $values/{{.valuesFile}}
+      {{- else }}
+      # Directory apps
+      source:
+        repoURL: https://github.com/quyetmv/k8s-config.git
+        targetRevision: HEAD
+        path: '{{.manifestPath}}'
+      {{- end }}
+
+      # Common ignoreDifferences
       ignoreDifferences:
       - group: apps
         kind: DaemonSet
@@ -68,16 +113,3 @@ spec:
       - group: apps
         kind: Deployment
         name: fluent-bit-*
-
-      sources:
-      - repoURL: https://github.com/quyetmv/k8s-config.git
-        targetRevision: main
-        ref: values
-
-      - repoURL: '{{.repoURL}}'
-        chart: '{{.chart}}'
-        targetRevision: '{{.targetRevision}}'
-        helm:
-          releaseName: '{{.appName}}'        
-          valueFiles:
-          - $values/{{.valuesFile}}          

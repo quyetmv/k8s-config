@@ -4,7 +4,7 @@ metadata:
   name: fluent-bit-nginx-ingress-external
   namespace: argocd
   annotations:
-    avp.kubernetes.io/path: "infra/data/dev/kafka-config"
+    avp.kubernetes.io/path: "quyetmv/data/testing/kafka-config"
 data:
   filter-kubernetes.conf: |-
     [FILTER]

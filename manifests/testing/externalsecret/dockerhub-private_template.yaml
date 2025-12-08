@@ -1,0 +1,43 @@
+---
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: vault-backend
+spec:
+  provider:
+    vault:
+      server: "https://vault.lab"
+      version: "v2"
+      auth:
+        # points to a secret that contains a vault token
+        # https://www.vaultproject.io/docs/auth/token
+        tokenSecretRef:
+          name: "vault-token"
+          key: "token"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-token
+data:
+  token: aHZzLkNBRVNJRGlJNUliRFFWVDFjMXVUMkplWURHWHpIeUZPRm
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: dockerhub-private
+spec:
+  dataFrom:
+  - extract:
+      key: lab/testing/data/dockerhub-private
+      metadataPolicy: None
+  refreshInterval: 15s
+  secretStoreRef:
+    kind: SecretStore
+    name: vault-backend
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    name: dockerhub-private
+    template:
+      type: kubernetes.io/dockerconfigjson
