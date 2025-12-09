@@ -35,3 +35,5 @@ spec:
         repoURL: https://github.com/quyetmv/k8s-config
         targetRevision: HEAD
         path: '{{manifestPath}}'
+      plugin:
+      name: argocd-vault-plugin
