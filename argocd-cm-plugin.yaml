@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: avp-plugin-cm
+  namespace: argocd
+data:
+  plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: argocd-vault-plugin
+    spec:
+      allowConcurrency: true
+      discover:
+        find:
+          command: [sh, -c, "find . -name '*.yaml' -o -name '*.yml' | xargs -n1 grep -l '<path:\\|avp.kubernetes.io' || true"]
+      generate:
+        command: [argocd-vault-plugin, generate, .]
+      lockRepo: false

@@ -32,8 +32,10 @@ spec:
         syncOptions:
         - CreateNamespace=false
       source:
-        repoURL: https://github.com/quyetmv/k8s-config
+        repoURL: https://github.com/quyetmv/k8s-config.git
         targetRevision: HEAD
         path: '{{manifestPath}}'
-      plugin:
-      name: argocd-vault-plugin
+        plugin:
+          env:
+          - name: AVP_TYPE
+            value: vault
