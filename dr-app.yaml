@@ -1,0 +1,98 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"argoproj.io/v1alpha1","kind":"ApplicationSet","metadata":{"annotations":{},"creationTimestamp":"2025-12-06T04:12:27Z","generation":3,"labels":{"env":"testing"},"name":"testing-directory-apps","namespace":"argocd","resourceVersion":"93443087","uid":"47637b7c-e79a-4b6e-8cf6-19761176246a"},"spec":{"generators":[{"matrix":{"generators":[{"clusters":{}},{"list":{"elements":[{"appName":"internal-app-rbac","manifestPath":"manifests/testing","namespace":"argocd"},{"appName":"fluentbit","manifestPath":"manifests/testing/logging/fluentbit","namespace":"argocd"}]}}]}}],"template":{"metadata":{"name":"{{name}}-{{appName}}"},"spec":{"destination":{"namespace":"{{namespace}}","server":"{{server}}"},"project":"default","source":{"path":"{{manifestPath}}","plugin":{"name":"avp-kustomize"},"repoURL":"https://github.com/quyetmv/k8s-config","targetRevision":"HEAD"},"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=false"]}}}},"status":{"conditions":[{"lastTransitionTime":"2025-12-06T04:12:27Z","message":"All applications have been generated successfully","reason":"ApplicationSetUpToDate","status":"False","type":"ErrorOccurred"},{"lastTransitionTime":"2025-12-06T04:12:27Z","message":"Successfully generated parameters for all Applications","reason":"ParametersGenerated","status":"True","type":"ParametersGenerated"},{"lastTransitionTime":"2025-12-06T04:12:27Z","message":"All applications have been generated successfully","reason":"ApplicationSetUpToDate","status":"True","type":"ResourcesUpToDate"}],"resources":[{"group":"argoproj.io","health":{"status":"Missing"},"kind":"Application","name":"in-cluster-fluentbit","namespace":"argocd","status":"OutOfSync","version":"v1alpha1"},{"group":"argoproj.io","health":{"status":"Healthy"},"kind":"Application","name":"in-cluster-internal-app-rbac","namespace":"argocd","status":"OutOfSync","version":"v1alpha1"},{"group":"argoproj.io","health":{"status":"Missing"},"kind":"Application","name":"testing-fluentbit","namespace":"argocd","status":"OutOfSync","version":"v1alpha1"},{"group":"argoproj.io","health":{"status":"Healthy"},"kind":"Application","name":"testing-internal-app-rbac","namespace":"argocd","status":"OutOfSync","version":"v1alpha1"}],"resourcesCount":4}}
+  creationTimestamp: "2025-12-06T04:12:27Z"
+  generation: 4
+  labels:
+    env: testing
+  name: testing-directory-apps
+  namespace: argocd
+  resourceVersion: "93444380"
+  uid: 47637b7c-e79a-4b6e-8cf6-19761176246a
+spec:
+  generators:
+  - matrix:
+      generators:
+      - clusters: {}
+      - list:
+          elements:
+          - appName: internal-app-rbac
+            manifestPath: manifests/testing
+            namespace: argocd
+          - appName: fluentbit
+            manifestPath: manifests/testing/logging/fluentbit
+            namespace: argocd
+  template:
+    metadata:
+      name: '{{name}}-{{appName}}'
+    spec:
+      destination:
+        namespace: '{{namespace}}'
+        server: '{{server}}'
+      project: default
+      source:
+        path: '{{manifestPath}}'
+        repoURL: https://github.com/quyetmv/k8s-config
+        targetRevision: HEAD
+        plugin:
+          name: argocd-vault-plugin
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=false
+status:
+  conditions:
+  - lastTransitionTime: "2025-12-06T04:12:27Z"
+    message: All applications have been generated successfully
+    reason: ApplicationSetUpToDate
+    status: "False"
+    type: ErrorOccurred
+  - lastTransitionTime: "2025-12-06T04:12:27Z"
+    message: Successfully generated parameters for all Applications
+    reason: ParametersGenerated
+    status: "True"
+    type: ParametersGenerated
+  - lastTransitionTime: "2025-12-06T04:12:27Z"
+    message: All applications have been generated successfully
+    reason: ApplicationSetUpToDate
+    status: "True"
+    type: ResourcesUpToDate
+  resources:
+  - group: argoproj.io
+    health:
+      status: Progressing
+    kind: Application
+    name: in-cluster-fluentbit
+    namespace: argocd
+    status: Unknown
+    version: v1alpha1
+  - group: argoproj.io
+    health:
+      status: Healthy
+    kind: Application
+    name: in-cluster-internal-app-rbac
+    namespace: argocd
+    status: Unknown
+    version: v1alpha1
+  - group: argoproj.io
+    health:
+      status: Progressing
+    kind: Application
+    name: testing-fluentbit
+    namespace: argocd
+    status: Unknown
+    version: v1alpha1
+  - group: argoproj.io
+    health:
+      status: Healthy
+    kind: Application
+    name: testing-internal-app-rbac
+    namespace: argocd
+    status: Unknown
+    version: v1alpha1
+  resourcesCount: 4

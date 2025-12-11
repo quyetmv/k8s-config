@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-repo-server
+  namespace: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-repo-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: argocd-repo-server
+    spec:
+      automountServiceAccountToken: false
+      serviceAccountName: argocd-repo-server
+
+      initContainers:
+      - name: download-avp
+        image: alpine:3.20
+        command: ["/bin/sh","-c"]
+        args:
+        - wget -qO /tools/argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.18.1/argocd-vault-plugin_1.18.1_linux_amd64 && chmod +x /tools/argocd-vault-plugin
+        volumeMounts:
+        - name: tools
+          mountPath: /tools
+
+      containers:
+      # MAIN REPO SERVER – giữ port 8081 + 8084
+      - name: argocd-repo-server
+        image: quay.io/argoproj/argocd:v3.2.0
+        command: ["/usr/local/bin/argocd-repo-server"]
+        ports:
+        - containerPort: 8081
+        - containerPort: 8084
+        volumeMounts:
+        - name: ssh-known-hosts
+          mountPath: /app/config/ssh
+        - name: tls-certs
+          mountPath: /app/config/tls
+        - name: gpg-keys
+          mountPath: /app/config/gpg/source
+        - name: gpg-keyring
+          mountPath: /app/config/gpg/keys
+        - name: argocd-repo-server-tls
+          mountPath: /app/config/reposerver/tls
+        - name: tmp
+          mountPath: /tmp
+        - name: helm-working-dir
+          mountPath: /helm-working-dir
+        - name: plugins
+          mountPath: /home/argocd/cmp-server/plugins
+        - name: tools
+          mountPath: /usr/local/bin/argocd-vault-plugin
+          subPath: argocd-vault-plugin
+
+      # AVP SIDECAR – CHẠY CHẾ ĐỘ CMP SERVER THUẦN TÚY, KHÔNG CÓ HTTP SERVER
+      - name: avp
+        image: quay.io/argoproj/argocd:v3.2.0
+        command: ["/usr/local/bin/argocd-repo-server"]
+        ports:
+        - containerPort: 8082
+        args:
+        - "cmp-server"
+        - "--disable-tls"           # ← thêm cho chắc
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+        envFrom:
+        - secretRef:
+            name: argocd-vault-credentials
+        volumeMounts:
+        - name: var-files
+          mountPath: /var/run/argocd
+        - name: plugins
+          mountPath: /home/argocd/cmp-server/plugins
+        - name: tmp
+          mountPath: /tmp
+        - name: avp-plugin-cm
+          mountPath: /home/argocd/cmp-server/config
+        - name: tools
+          mountPath: /usr/local/bin/argocd-vault-plugin
+          subPath: argocd-vault-plugin
+
+      volumes:
+      - name: tools
+        emptyDir: {}
+      - name: plugins
+        emptyDir: {}
+      - name: var-files
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: helm-working-dir
+        emptyDir: {}
+      - name: ssh-known-hosts
+        configMap:
+          name: argocd-ssh-known-hosts-cm
+      - name: tls-certs
+        configMap:
+          name: argocd-tls-certs-cm
+      - name: gpg-keys
+        configMap:
+          name: argocd-gpg-keys-cm
+      - name: gpg-keyring
+        emptyDir: {}
+      - name: argocd-repo-server-tls
+        secret:
+          secretName: argocd-repo-server-tls
+          optional: true
+      - name: avp-plugin-cm
+        configMap:
+          name: avp-plugin-cm
