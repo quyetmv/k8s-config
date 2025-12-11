@@ -5,6 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "2"
+    avp.kubernetes.io/path: "quyetmv/testing/data/k8s-config"
 data:
   filter-kubernetes.conf: |
     [FILTER]

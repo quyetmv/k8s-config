@@ -11,6 +11,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "3"
+    avp.kubernetes.io/path: "quyetmv/testing/data/k8s-config"
 spec:
   selector:
     matchLabels:
@@ -23,7 +24,7 @@ spec:
     spec:
       containers:
       - name: fluent-bit-logging
-        image: registry.giaohangtietkiem.vn/devops/fluent-bit:2.2.2
+        image: quyetmv/fluent-bit:2.2.2
         imagePullPolicy: Always
         resources:
           limits:

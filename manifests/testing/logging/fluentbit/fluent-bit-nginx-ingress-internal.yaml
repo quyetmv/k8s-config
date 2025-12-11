@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: fluent-bit-nginx-ingress-internal
   namespace: argocd
+  annotations:
+    avp.kubernetes.io/path: "quyetmv/testing/data/k8s-config"
 data:
   filter-kubernetes.conf: |-
     [FILTER]
