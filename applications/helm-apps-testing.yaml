@@ -70,7 +70,7 @@ spec:
         name: fluent-bit-*
 
       sources:
-      - repoURL: https://github.com/quyetmv/k8s-config.git
+      - repoURL: git@github.com:quyetmv/k8s-config.git
         targetRevision: main
         ref: values
 
