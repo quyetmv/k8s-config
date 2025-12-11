@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: argocd
+  annotations:
+    avp.kubernetes.io/path: "quyetmv/testing/data/k8s-config"
+data:
+  output-kafka.conf: |
+    [OUTPUT]
+        Name           kafka
+        Match          *
+        Brokers        ${KAFKA_INFRA_BROKER}
+        Topics         ${INGRESS_INTERNAL_TOPIC}
+        Timestamp_Key  @timestamp
+        Format         json
+        Retry_Limit    false
+        rdkafka.log.connection.close false
+        rdkafka.queue.buffering.max.kbytes 10240
+        rdkafka.request.required.acks 1
+        rdkafka.compression.codec gzip
+        rdkafka.max.in.flight.requests.per.connection 5
+        rdkafka.batch.num.messages 1000
+        rdkafka.batch.size 1000000
+        rdkafka.message.max.bytes 100000000
+        rdkafka.security.protocol ${KAFKA_INFRA_PROTOCOL}
+        rdkafka.sasl.username ${KAFKA_INFRA_USERNAME}
+        rdkafka.sasl.password ${KAFKA_INFRA_PASSWORD}
+        rdkafka.sasl.mechanism ${KAFKA_INFRA_MECHANISM}

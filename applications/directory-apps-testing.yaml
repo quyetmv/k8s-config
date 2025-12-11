@@ -16,7 +16,10 @@ spec:
             manifestPath: manifests/testing
           - appName: fluentbit
             namespace: argocd
-            manifestPath: manifests/testing/logging/fluentbit            # ← SỬA
+            manifestPath: manifests/testing/logging/fluentbit
+          - appName: test-config
+            namespace: argocd
+            manifestPath: manifests/testing/configmap/config.yaml
   template:
     metadata:
       name: '{{name}}-{{appName}}'
@@ -32,10 +35,12 @@ spec:
         syncOptions:
         - CreateNamespace=false
       source:
-        repoURL: https://github.com/quyetmv/k8s-config.git
+        repoURL: git@github.com:quyetmv/k8s-config.git
         targetRevision: HEAD
         path: '{{manifestPath}}'
         plugin:
+          # [FIXED] Phải chỉ định chính xác tên plugin đã đăng ký trong Sidecar ConfigMap
+          name: argocd-vault-plugin 
           env:
           - name: AVP_TYPE
             value: vault
