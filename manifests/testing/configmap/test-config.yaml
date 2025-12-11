@@ -4,14 +4,16 @@ metadata:
   name: test-config
   namespace: argocd
   annotations:
+    # AVP sẽ tìm các key bên dưới tại đường dẫn này trong Vault
     avp.kubernetes.io/path: "quyetmv/testing/data/k8s-config"
 data:
   output-kafka.conf: |
     [OUTPUT]
         Name           kafka
         Match          *
-        Brokers        ${KAFKA_INFRA_BROKER}
-        Topics         ${INGRESS_INTERNAL_TOPIC}
+        # Sửa ${...} thành [[...]]
+        Brokers        [[KAFKA_INFRA_BROKER]]
+        Topics         [[INGRESS_INTERNAL_TOPIC]]
         Timestamp_Key  @timestamp
         Format         json
         Retry_Limit    false
@@ -23,7 +25,7 @@ data:
         rdkafka.batch.num.messages 1000
         rdkafka.batch.size 1000000
         rdkafka.message.max.bytes 100000000
-        rdkafka.security.protocol ${KAFKA_INFRA_PROTOCOL}
-        rdkafka.sasl.username ${KAFKA_INFRA_USERNAME}
-        rdkafka.sasl.password ${KAFKA_INFRA_PASSWORD}
-        rdkafka.sasl.mechanism ${KAFKA_INFRA_MECHANISM}
+        rdkafka.security.protocol [[KAFKA_INFRA_PROTOCOL]]
+        rdkafka.sasl.username [[KAFKA_INFRA_USERNAME]]
+        rdkafka.sasl.password [[KAFKA_INFRA_PASSWORD]]
+        rdkafka.sasl.mechanism [[KAFKA_INFRA_MECHANISM]]
